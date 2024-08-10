@@ -52,6 +52,7 @@ function updateColor() {
 function setColor(color) {
     colorPicker.value = color;
     brushPreview.style.backgroundColor = color;
+    updateCursor();
 }
 
 colorPicker.addEventListener('input', updateColor);
@@ -78,9 +79,78 @@ function updateBrushPreview() {
     const size = brushSize.value;
     brushPreview.style.width = `${size}px`;
     brushPreview.style.height = `${size}px`;
+    updateCursor();
 }
 
 brushSize.addEventListener('input', updateBrushPreview);
+
+function updateCursor() {
+    const size = brushSize.value;
+    const color = currentTool === 'eraser' ? '#ffffff' : colorPicker.value;
+    let cursorSvg;
+
+    switch (currentTool) {
+        case 'pencil':
+            cursorSvg = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="${size * 2}" height="${size * 2}" viewBox="0 0 ${size * 2} ${size * 2}">
+                    <circle cx="${size}" cy="${size}" r="${size / 2}" fill="none" stroke="${color}" stroke-width="1.5"/>
+                    <line x1="${size}" y1="${size}" x2="${size}" y2="${size * 2}" stroke="${color}" stroke-width="1.5"/>
+                    <line x1="${size}" y1="${size}" x2="${size * 1.5}" y2="${size * 1.5}" stroke="${color}" stroke-width="1.5"/>
+                </svg>
+            `;
+            break;
+        case 'brush':
+            cursorSvg = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="${size * 2}" height="${size * 2}" viewBox="0 0 ${size * 2} ${size * 2}">
+                    <circle cx="${size}" cy="${size}" r="${size / 2}" fill="none" stroke="${color}" stroke-width="1.5">
+                        <animate attributeName="r" values="${size / 2};${size / 2.2};${size / 2}" dur="1s" repeatCount="indefinite"/>
+                    </circle>
+                    <circle cx="${size}" cy="${size}" r="${size / 4}" fill="${color}">
+                        <animate attributeName="r" values="${size / 4};${size / 4.4};${size / 4}" dur="1s" repeatCount="indefinite"/>
+                    </circle>
+                </svg>
+            `;
+            break;
+        case 'eraser':
+            cursorSvg = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="${size * 2}" height="${size * 2}" viewBox="0 0 ${size * 2} ${size * 2}">
+                    <rect x="${size / 2}" y="${size / 2}" width="${size}" height="${size}" fill="none" stroke="#000000" stroke-width="1.5"/>
+                    <line x1="${size / 2}" y1="${size / 2}" x2="${size * 1.5}" y2="${size * 1.5}" stroke="#000000" stroke-width="1.5"/>
+                    <line x1="${size * 1.5}" y1="${size / 2}" x2="${size / 2}" y2="${size * 1.5}" stroke="#000000" stroke-width="1.5"/>
+                </svg>
+            `;
+            break;
+    }
+
+    const cursorUrl = `data:image/svg+xml;base64,${btoa(addDropShadowToSvg(cursorSvg))}`;
+    canvas.style.cursor = `url(${cursorUrl}) ${size} ${size}, auto`;
+}
+
+function addDropShadowToSvg(svgString) {
+    const parser = new DOMParser();
+    const svg = parser.parseFromString(svgString, 'image/svg+xml').documentElement;
+    
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    defs.innerHTML = `
+        <filter id="drop-shadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+            <feOffset dx="2" dy="2" result="offsetblur"/>
+            <feFlood flood-color="#000000" flood-opacity="0.3"/>
+            <feComposite in2="offsetblur" operator="in"/>
+            <feMerge>
+                <feMergeNode/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+    `;
+    svg.insertBefore(defs, svg.firstChild);
+    
+    svg.querySelectorAll('circle, rect, line').forEach(shape => {
+        shape.setAttribute('filter', 'url(#drop-shadow)');
+    });
+    
+    return new XMLSerializer().serializeToString(svg);
+}
 
 function startDrawing(e) {
     isDrawing = true;
@@ -218,21 +288,6 @@ function zoomOut() {
 function applyZoom() {
     ctx.setTransform(zoom, 0, 0, zoom, panX, panY);
     redrawCanvas();
-}
-
-function updateCursor() {
-    const size = brushSize.value;
-    const color = currentTool === 'eraser' ? '#ffffff' : colorPicker.value;
-    const cursorCanvas = document.createElement('canvas');
-    cursorCanvas.width = size * 2;
-    cursorCanvas.height = size * 2;
-    const cursorCtx = cursorCanvas.getContext('2d');
-    cursorCtx.beginPath();
-    cursorCtx.arc(size, size, size / 2, 0, Math.PI * 2);
-    cursorCtx.strokeStyle = color;
-    cursorCtx.stroke();
-    const cursorUrl = cursorCanvas.toDataURL();
-    canvas.style.cursor = `url(${cursorUrl}) ${size} ${size}, auto`;
 }
 
 clearButton.addEventListener('click', clearCanvas);
