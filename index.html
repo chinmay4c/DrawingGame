@@ -9,11 +9,36 @@
 <body>
     <div class="container">
         <h1>Drawing Game</h1>
-        <canvas id="drawingCanvas"></canvas>
+        <div class="canvas-container">
+            <canvas id="drawingCanvas"></canvas>
+        </div>
         <div class="controls">
-            <input type="color" id="colorPicker" value="#000000">
-            <input type="range" id="brushSize" min="1" max="50" value="5">
-            <button id="clearButton">Clear Canvas</button>
+            <div class="tool-group">
+                <button id="pencilTool" class="active">Pencil</button>
+                <button id="brushTool">Brush</button>
+                <button id="eraserTool">Eraser</button>
+            </div>
+            <div class="color-group">
+                <input type="color" id="colorPicker" value="#000000">
+                <div class="color-palette">
+                    <div class="color-swatch" style="background-color: #ff0000;"></div>
+                    <div class="color-swatch" style="background-color: #00ff00;"></div>
+                    <div class="color-swatch" style="background-color: #0000ff;"></div>
+                    <div class="color-swatch" style="background-color: #ffff00;"></div>
+                    <div class="color-swatch" style="background-color: #ff00ff;"></div>
+                </div>
+            </div>
+            <div class="size-group">
+                <label for="brushSize">Size:</label>
+                <input type="range" id="brushSize" min="1" max="50" value="5">
+            </div>
+            <div class="action-group">
+                <button id="undoButton">Undo</button>
+                <button id="redoButton">Redo</button>
+                <button id="clearButton">Clear</button>
+                <button id="saveButton">Save</button>
+                <button id="loadButton">Load</button>
+            </div>
         </div>
     </div>
     <script src="script.js"></script>
