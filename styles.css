@@ -1,50 +1,110 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+
+:root {
+    --primary-color: #4a90e2;
+    --secondary-color: #f39c12;
+    --background-color: #f0f0f0;
+    --text-color: #333;
+    --tooltip-color: rgba(0, 0, 0, 0.8);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Poppins', sans-serif;
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    margin: 0;
-    background-color: #f0f0f0;
+    background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+    color: var(--text-color);
 }
 
 .container {
-    text-align: center;
-    max-width: 100%;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     padding: 20px;
+    max-width: 1000px;
+    width: 95%;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+h1 {
+    font-size: 2.5rem;
+    color: var(--primary-color);
+}
+
+h1 span {
+    font-size: 1.5rem;
+    color: var(--secondary-color);
 }
 
 .canvas-container {
-    max-width: 100%;
-    overflow: auto;
+    position: relative;
+    width: 100%;
+    height: 0;
+    padding-bottom: 75%;
+    overflow: hidden;
+    border-radius: 5px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 canvas {
-    border: 2px solid #333;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     background-color: white;
+    cursor: crosshair;
 }
 
-.controls {
-    margin-top: 20px;
+.toolbar {
     display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
     flex-wrap: wrap;
-    justify-content: center;
+}
+
+.tool-group, .color-group, .size-group {
+    display: flex;
+    align-items: center;
     gap: 10px;
 }
 
-.tool-group, .color-group, .size-group, .action-group {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-button {
-    padding: 5px 10px;
+.tool-btn, .action-btn {
+    background-color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
     cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-button.active {
-    background-color: #007bff;
+.tool-btn:hover, .action-btn:hover {
+    background-color: var(--primary-color);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.tool-btn.active {
+    background-color: var(--primary-color);
     color: white;
 }
 
@@ -53,7 +113,9 @@ input[type="color"] {
     height: 40px;
     padding: 0;
     border: none;
+    border-radius: 50%;
     cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .color-palette {
@@ -62,15 +124,89 @@ input[type="color"] {
 }
 
 .color-swatch {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.color-swatch:hover {
+    transform: scale(1.2);
+}
+
+.color-swatch.custom {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2rem;
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+#brushSize {
+    width: 100px;
+}
+
+#brushPreview {
     width: 20px;
     height: 20px;
-    border: 1px solid #333;
-    cursor: pointer;
+    border-radius: 50%;
+    background-color: black;
+}
+
+.floating-actions {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+[data-tooltip] {
+    position: relative;
+}
+
+[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--tooltip-color);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+[data-tooltip]:hover::after {
+    opacity: 1;
 }
 
 @media (max-width: 768px) {
-    .controls {
+    .toolbar {
         flex-direction: column;
         align-items: center;
     }
+
+    .tool-group, .color-group, .size-group {
+        margin-bottom: 10px;
+    }
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.pulse {
+    animation: pulse 1s infinite;
 }

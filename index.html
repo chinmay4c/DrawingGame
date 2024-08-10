@@ -3,20 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Drawing Game</title>
+    <title>ArtMaster</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
 </head>
 <body>
     <div class="container">
-        <h1>Drawing Game</h1>
+        <header>
+            <h1>ArtMaster</h1>
+        </header>
         <div class="canvas-container">
             <canvas id="drawingCanvas"></canvas>
         </div>
-        <div class="controls">
+        <div class="toolbar">
             <div class="tool-group">
-                <button id="pencilTool" class="active">Pencil</button>
-                <button id="brushTool">Brush</button>
-                <button id="eraserTool">Eraser</button>
+                <button id="pencilTool" class="tool-btn active" data-tooltip="Pencil"><i class="fas fa-pencil-alt"></i></button>
+                <button id="brushTool" class="tool-btn" data-tooltip="Brush"><i class="fas fa-paint-brush"></i></button>
+                <button id="eraserTool" class="tool-btn" data-tooltip="Eraser"><i class="fas fa-eraser"></i></button>
             </div>
             <div class="color-group">
                 <input type="color" id="colorPicker" value="#000000">
@@ -26,19 +29,22 @@
                     <div class="color-swatch" style="background-color: #0000ff;"></div>
                     <div class="color-swatch" style="background-color: #ffff00;"></div>
                     <div class="color-swatch" style="background-color: #ff00ff;"></div>
+                    <div class="color-swatch custom" data-tooltip="Add Custom Color">+</div>
                 </div>
             </div>
             <div class="size-group">
-                <label for="brushSize">Size:</label>
                 <input type="range" id="brushSize" min="1" max="50" value="5">
+                <div id="brushPreview"></div>
             </div>
-            <div class="action-group">
-                <button id="undoButton">Undo</button>
-                <button id="redoButton">Redo</button>
-                <button id="clearButton">Clear</button>
-                <button id="saveButton">Save</button>
-                <button id="loadButton">Load</button>
-            </div>
+        </div>
+        <div class="floating-actions">
+            <button id="undoButton" class="action-btn" data-tooltip="Undo"><i class="fas fa-undo"></i></button>
+            <button id="redoButton" class="action-btn" data-tooltip="Redo"><i class="fas fa-redo"></i></button>
+            <button id="clearButton" class="action-btn" data-tooltip="Clear"><i class="fas fa-trash"></i></button>
+            <button id="saveButton" class="action-btn" data-tooltip="Save"><i class="fas fa-save"></i></button>
+            <button id="loadButton" class="action-btn" data-tooltip="Load"><i class="fas fa-folder-open"></i></button>
+            <button id="zoomInButton" class="action-btn" data-tooltip="Zoom In"><i class="fas fa-search-plus"></i></button>
+            <button id="zoomOutButton" class="action-btn" data-tooltip="Zoom Out"><i class="fas fa-search-minus"></i></button>
         </div>
     </div>
     <script src="script.js"></script>
