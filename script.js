@@ -2,11 +2,14 @@ const canvas = document.getElementById('drawingCanvas');
 const ctx = canvas.getContext('2d');
 const colorPicker = document.getElementById('colorPicker');
 const brushSize = document.getElementById('brushSize');
+const brushPreview = document.getElementById('brushPreview');
 const clearButton = document.getElementById('clearButton');
 const undoButton = document.getElementById('undoButton');
 const redoButton = document.getElementById('redoButton');
 const saveButton = document.getElementById('saveButton');
 const loadButton = document.getElementById('loadButton');
+const zoomInButton = document.getElementById('zoomInButton');
+const zoomOutButton = document.getElementById('zoomOutButton');
 const pencilTool = document.getElementById('pencilTool');
 const brushTool = document.getElementById('brushTool');
 const eraserTool = document.getElementById('eraserTool');
@@ -16,58 +19,68 @@ let isDrawing = false;
 let currentTool = 'pencil';
 let undoStack = [];
 let redoStack = [];
+let zoom = 1;
+let panX = 0;
+let panY = 0;
 
-// Set canvas size
 function resizeCanvas() {
     const containerWidth = canvas.parentElement.clientWidth;
-    canvas.width = Math.min(800, containerWidth - 20);
-    canvas.height = canvas.width * 0.75;
+    const containerHeight = canvas.parentElement.clientHeight;
+    canvas.width = containerWidth;
+    canvas.height = containerHeight;
     redrawCanvas();
 }
 
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
-// Tool selection
-pencilTool.addEventListener('click', () => setTool('pencil'));
-brushTool.addEventListener('click', () => setTool('brush'));
-eraserTool.addEventListener('click', () => setTool('eraser'));
-
 function setTool(tool) {
     currentTool = tool;
     [pencilTool, brushTool, eraserTool].forEach(btn => btn.classList.remove('active'));
     document.getElementById(`${tool}Tool`).classList.add('active');
+    updateCursor();
 }
 
-// Color selection
-colorPicker.addEventListener('change', () => setColor(colorPicker.value));
-colorSwatches.forEach(swatch => {
-    swatch.addEventListener('click', () => setColor(swatch.style.backgroundColor));
-});
+pencilTool.addEventListener('click', () => setTool('pencil'));
+brushTool.addEventListener('click', () => setTool('brush'));
+eraserTool.addEventListener('click', () => setTool('eraser'));
+
+function updateColor() {
+    setColor(colorPicker.value);
+}
 
 function setColor(color) {
     colorPicker.value = color;
+    brushPreview.style.backgroundColor = color;
 }
 
-// Drawing events
-canvas.addEventListener('mousedown', startDrawing);
-canvas.addEventListener('mousemove', draw);
-canvas.addEventListener('mouseup', stopDrawing);
-canvas.addEventListener('mouseout', stopDrawing);
-
-canvas.addEventListener('touchstart', handleTouch);
-canvas.addEventListener('touchmove', handleTouch);
-canvas.addEventListener('touchend', stopDrawing);
-
-function handleTouch(e) {
-    e.preventDefault();
-    const touch = e.touches[0];
-    const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 'mousemove', {
-        clientX: touch.clientX,
-        clientY: touch.clientY
+colorPicker.addEventListener('input', updateColor);
+colorSwatches.forEach(swatch => {
+    swatch.addEventListener('click', () => {
+        if (swatch.classList.contains('custom')) {
+            addCustomColor();
+        } else {
+            setColor(swatch.style.backgroundColor);
+        }
     });
-    canvas.dispatchEvent(mouseEvent);
+});
+
+function addCustomColor() {
+    const newColor = colorPicker.value;
+    const newSwatch = document.createElement('div');
+    newSwatch.className = 'color-swatch';
+    newSwatch.style.backgroundColor = newColor;
+    newSwatch.addEventListener('click', () => setColor(newColor));
+    document.querySelector('.color-palette').insertBefore(newSwatch, document.querySelector('.color-swatch.custom'));
 }
+
+function updateBrushPreview() {
+    const size = brushSize.value;
+    brushPreview.style.width = `${size}px`;
+    brushPreview.style.height = `${size}px`;
+}
+
+brushSize.addEventListener('input', updateBrushPreview);
 
 function startDrawing(e) {
     isDrawing = true;
@@ -78,16 +91,17 @@ function draw(e) {
     if (!isDrawing) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = (e.clientX - rect.left) / zoom - panX;
+    const y = (e.clientY - rect.top) / zoom - panY;
 
-    ctx.lineWidth = brushSize.value;
+    ctx.lineWidth = brushSize.value / zoom;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
     if (currentTool === 'eraser') {
-        ctx.strokeStyle = '#ffffff';
+        ctx.globalCompositeOperation = 'destination-out';
     } else {
+        ctx.globalCompositeOperation = 'source-over';
         ctx.strokeStyle = colorPicker.value;
     }
 
@@ -111,7 +125,25 @@ function stopDrawing() {
     }
 }
 
-// Undo/Redo functionality
+canvas.addEventListener('mousedown', startDrawing);
+canvas.addEventListener('mousemove', draw);
+canvas.addEventListener('mouseup', stopDrawing);
+canvas.addEventListener('mouseout', stopDrawing);
+
+canvas.addEventListener('touchstart', handleTouch);
+canvas.addEventListener('touchmove', handleTouch);
+canvas.addEventListener('touchend', stopDrawing);
+
+function handleTouch(e) {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 'mousemove', {
+        clientX: touch.clientX,
+        clientY: touch.clientY
+    });
+    canvas.dispatchEvent(mouseEvent);
+}
+
 function saveState() {
     undoStack.push(canvas.toDataURL());
     redoStack = [];
@@ -140,13 +172,11 @@ function redrawCanvas() {
     };
 }
 
-// Clear canvas
 function clearCanvas() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     saveState();
 }
 
-// Save and Load functionality
 function saveDrawing() {
     const link = document.createElement('a');
     link.download = 'drawing.png';
@@ -175,12 +205,85 @@ function loadDrawing() {
     input.click();
 }
 
-// Event listeners
+function zoomIn() {
+    zoom *= 1.1;
+    applyZoom();
+}
+
+function zoomOut() {
+    zoom /= 1.1;
+    applyZoom();
+}
+
+function applyZoom() {
+    ctx.setTransform(zoom, 0, 0, zoom, panX, panY);
+    redrawCanvas();
+}
+
+function updateCursor() {
+    const size = brushSize.value;
+    const color = currentTool === 'eraser' ? '#ffffff' : colorPicker.value;
+    const cursorCanvas = document.createElement('canvas');
+    cursorCanvas.width = size * 2;
+    cursorCanvas.height = size * 2;
+    const cursorCtx = cursorCanvas.getContext('2d');
+    cursorCtx.beginPath();
+    cursorCtx.arc(size, size, size / 2, 0, Math.PI * 2);
+    cursorCtx.strokeStyle = color;
+    cursorCtx.stroke();
+    const cursorUrl = cursorCanvas.toDataURL();
+    canvas.style.cursor = `url(${cursorUrl}) ${size} ${size}, auto`;
+}
+
 clearButton.addEventListener('click', clearCanvas);
 undoButton.addEventListener('click', undo);
 redoButton.addEventListener('click', redo);
 saveButton.addEventListener('click', saveDrawing);
 loadButton.addEventListener('click', loadDrawing);
+zoomInButton.addEventListener('click', zoomIn);
+zoomOutButton.addEventListener('click', zoomOut);
 
-// Initialize
+updateBrushPreview();
+updateCursor();
 saveState();
+
+// Add panning functionality
+let isPanning = false;
+let startPanX, startPanY;
+
+canvas.addEventListener('mousedown', (e) => {
+    if (e.button === 1) { // Middle mouse button
+        isPanning = true;
+        startPanX = e.clientX - panX;
+        startPanY = e.clientY - panY;
+        canvas.style.cursor = 'grabbing';
+    }
+});
+
+canvas.addEventListener('mousemove', (e) => {
+    if (isPanning) {
+        panX = e.clientX - startPanX;
+        panY = e.clientY - startPanY;
+        applyZoom();
+    }
+});
+
+canvas.addEventListener('mouseup', () => {
+    if (isPanning) {
+        isPanning = false;
+        canvas.style.cursor = 'default';
+        updateCursor();
+    }
+});
+
+// Add animation to UI elements
+function addPulseAnimation(element) {
+    element.addEventListener('click', () => {
+        element.classList.add('pulse');
+        setTimeout(() => {
+            element.classList.remove('pulse');
+        }, 300);
+    });
+}
+
+[clearButton, undoButton, redoButton, saveButton, loadButton, zoomInButton, zoomOutButton].forEach(addPulseAnimation);
